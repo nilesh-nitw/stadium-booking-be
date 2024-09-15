@@ -1,6 +1,5 @@
 package com.example.demo.auth;
 
-
 import com.example.demo.config.JwtService;
 import com.example.demo.customer.Customer;
 import com.example.demo.customer.CustomerRepository;
@@ -21,34 +20,38 @@ public class AuthenticationService {
 
   public AuthenticationResponse register(RegisterRequest request) {
     var customer = Customer.builder()
-                    .firstName(request.getFirstName())
-                    .lastName(request.getLastName())
-                    .email(request.getEmail())
-                    .dateOfBirth(request.getDateOfBirth())
-                    .phoneNumber(request.getPhoneNumber())
-                    .address(request.getAddress())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .role(Role.USER)
-                    .build();
+            .firstName(request.getFirstName())
+            .lastName(request.getLastName())
+            .email(request.getEmail())
+            .dateOfBirth(request.getDateOfBirth())
+            .phoneNumber(request.getPhoneNumber())
+            .address(request.getAddress())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .role(Role.USER)
+            .build();
     repository.save(customer);
     var jwtToken = jwtService.generateToken(customer);
     return AuthenticationResponse.builder()
-        .token(jwtToken)
-        .build();
+            .token(jwtToken)
+            .customerId(customer.getCustomerId()) // Include customerId in the response
+            .build();
   }
 
   public AuthenticationResponse authenticate(AuthenticationRequest request) {
     authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(
-            request.getEmail(),
-            request.getPassword()
-        )
+            new UsernamePasswordAuthenticationToken(
+                    request.getEmail(),
+                    request.getPassword()
+            )
     );
     var user = repository.findCustomerByEmail(request.getEmail())
-        .orElseThrow();
+            .orElseThrow(() -> new RuntimeException("Customer not found"));
+
     var jwtToken = jwtService.generateToken(user);
+
     return AuthenticationResponse.builder()
-        .token(jwtToken)
-        .build();
+            .token(jwtToken)
+            .customerId(user.getCustomerId()) // Include customerId in the response
+            .build();
   }
 }
